@@ -18,14 +18,6 @@ namespace AssetPricesAPI.Controllers
         private readonly AssetPricesContext _context;
         private readonly IAssetRepository _assetRepository;
 
-        // Constructor with Dependency Injection
-        [ActivatorUtilitiesConstructor]
-        public AssetsController(AssetPricesContext context)
-        {
-            _context = context;
-            _assetRepository = new AssetRepository(context);
-        }
-
         // Constructor with Repository Injection
         public AssetsController(IAssetRepository assetRepository)
         {

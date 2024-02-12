@@ -42,10 +42,12 @@ namespace AssetPriceXUnitSpecFlow.StepDefinitions.API.Controllers
             scenarioContext.TryGetValue("prices", out List<Price> prices);
 
             var mockPricesRepository = new Mock<IPricesRepository>();
+            var mockAssetRepository = new Mock<IAssetRepository>();
+            var mockSourcesRepository = new Mock<ISourcesRepository>();
 
             mockPricesRepository.Setup(m => m.GetPricesAsync()).ReturnsAsync(prices);
 
-            var pricesController = new PricesController(mockPricesRepository.Object);
+            var pricesController = new PricesController(mockPricesRepository.Object, mockAssetRepository.Object, mockSourcesRepository.Object);
 
             scenarioContext["ActionResult"] = await pricesController.GetPrices();
         }
@@ -86,10 +88,12 @@ namespace AssetPriceXUnitSpecFlow.StepDefinitions.API.Controllers
             var price = prices.FirstOrDefault(p => p.Id == priceId);
 
             var mockPricesRepository = new Mock<IPricesRepository>();
+            var mockAssetRepository = new Mock<IAssetRepository>();
+            var mockSourcesRepository = new Mock<ISourcesRepository>();
 
             mockPricesRepository.Setup(m => m.GetPriceAsync(priceId)).ReturnsAsync(price);
 
-            var pricesController = new PricesController(mockPricesRepository.Object);
+            var pricesController = new PricesController(mockPricesRepository.Object, mockAssetRepository.Object, mockSourcesRepository.Object);
 
             scenarioContext["ActionResult"] = await pricesController.GetPrice(priceId);
         }
@@ -117,13 +121,15 @@ namespace AssetPriceXUnitSpecFlow.StepDefinitions.API.Controllers
             scenarioContext.TryGetValue("sourceName", out string sourceName);
             
             var mockPricesRepository = new Mock<IPricesRepository>();
+            var mockAssetRepository = new Mock<IAssetRepository>();
+            var mockSourcesRepository = new Mock<ISourcesRepository>();
 
             mockPricesRepository.Setup(m => m.GetSourceAsync(sourceName)).ReturnsAsync(It.IsAny<Source>());
             mockPricesRepository.Setup(m => m.GetAssetsAsync(assetISINs)).ReturnsAsync(It.IsAny<List<Asset>>());
             mockPricesRepository.Setup(m => m.GetPricesAsync(date, It.IsAny<List<Asset>>(), It.IsAny<Source>())).ReturnsAsync(pricesDate);
 
 
-            var pricesController = new PricesController(mockPricesRepository.Object);
+            var pricesController = new PricesController(mockPricesRepository.Object, mockAssetRepository.Object, mockSourcesRepository.Object);
 
             scenarioContext["ActionResult"] = await pricesController.GetPriceByDate(date, assetISINs, sourceName);
         }
@@ -163,11 +169,13 @@ namespace AssetPriceXUnitSpecFlow.StepDefinitions.API.Controllers
 
             scenarioContext.TryGetValue("existingPrice", out Price existingPrice);
             var mockPricesRepository = new Mock<IPricesRepository>();
+            var mockAssetRepository = new Mock<IAssetRepository>();
+            var mockSourcesRepository = new Mock<ISourcesRepository>();
 
             mockPricesRepository.Setup(m => m.GetPriceAsync(price)).ReturnsAsync(existingPrice);
             mockPricesRepository.Setup(m => m.EditPriceAsync(priceId, price)).ReturnsAsync(It.IsAny<Price>());
             
-            var pricesController = new PricesController(mockPricesRepository.Object);
+            var pricesController = new PricesController(mockPricesRepository.Object, mockAssetRepository.Object, mockSourcesRepository.Object);
 
             scenarioContext["ActionResult"] = await pricesController.PutPrice(priceId, price);
         }

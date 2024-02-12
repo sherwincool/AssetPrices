@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using AssetPricesAPI;
 using AssetPricesAPI.Models;
+using AssetPricesAPI.Repositories;
 
 namespace AssetPricesAPI.Controllers
 {
@@ -14,32 +15,32 @@ namespace AssetPricesAPI.Controllers
     [ApiController]
     public class SourcesController : ControllerBase
     {
-        private readonly AssetPricesContext _context;
+        private readonly ISourcesRepository sourcesRepository;
 
-        public SourcesController(AssetPricesContext context)
+        public SourcesController(ISourcesRepository sourcesRepository)
         {
-            _context = context;
+            this.sourcesRepository = sourcesRepository;
         }
 
         // GET: api/Sources
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Source>>> GetSources()
+        public async Task<IActionResult> GetSources()
         {
-            return await _context.Sources.ToListAsync();
+            return Ok(sourcesRepository.GetSourcesAsync());
         }
 
         // GET: api/Sources/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Source>> GetSource(int id)
+        public async Task<IActionResult> GetSource(int id)
         {
-            var source = await _context.Sources.FindAsync(id);
+            var source = await sourcesRepository.GetSourceAsync(id);
 
             if (source == null)
             {
                 return NotFound();
             }
 
-            return source;
+            return Ok(source);
         }
 
         // PUT: api/Sources/5
@@ -52,22 +53,14 @@ namespace AssetPricesAPI.Controllers
                 return BadRequest();
             }
 
-            _context.Entry(source).State = EntityState.Modified;
-
             try
             {
-                await _context.SaveChangesAsync();
+                await sourcesRepository.EditSourceAsync(id, source);
+
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Exception ex)
             {
-                if (!SourceExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                return BadRequest(ex.Message);
             }
 
             return NoContent();
@@ -76,10 +69,15 @@ namespace AssetPricesAPI.Controllers
         // POST: api/Sources
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Source>> PostSource(Source source)
+        public async Task<IActionResult> PostSource(Source source)
         {
-            _context.Sources.Add(source);
-            await _context.SaveChangesAsync();
+            var currentSource = await sourcesRepository.GetSourceAsync(source.Name);
+
+            if (currentSource != null)
+            {
+                return BadRequest("The Source name is already exist.");
+            }
+            await sourcesRepository.AddSourceAsync(source);
 
             return CreatedAtAction("GetSource", new { id = source.Id }, source);
         }
@@ -88,21 +86,16 @@ namespace AssetPricesAPI.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteSource(int id)
         {
-            var source = await _context.Sources.FindAsync(id);
+            var source = await sourcesRepository.GetSourceAsync(id);
             if (source == null)
             {
                 return NotFound();
             }
 
-            _context.Sources.Remove(source);
-            await _context.SaveChangesAsync();
+            await sourcesRepository.DeleteSourceAsync(source);
 
             return NoContent();
         }
 
-        private bool SourceExists(int id)
-        {
-            return _context.Sources.Any(e => e.Id == id);
-        }
     }
 }

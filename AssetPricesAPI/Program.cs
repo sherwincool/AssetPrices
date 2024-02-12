@@ -1,3 +1,4 @@
+using AssetPricesAPI.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,6 +24,9 @@ builder.Services.AddDbContext<AssetPricesContext>(opt =>
 
             );
 
+builder.Services.AddSingleton<IAssetRepository, AssetRepository>();
+builder.Services.AddSingleton<IPricesRepository, PricesRepository>();
+builder.Services.AddSingleton<ISourcesRepository, SourcesRepository>();
 
 var app = builder.Build();
 

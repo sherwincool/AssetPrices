@@ -15,19 +15,15 @@ namespace AssetPricesAPI.Controllers
     [ApiController]
     public class PricesController : ControllerBase
     {
-        private readonly AssetPricesContext _context;
-        private readonly IPricesRepository _pricesRepository;
+        private readonly IPricesRepository pricesRepository;
+        private readonly IAssetRepository assetRepository;
+        private readonly ISourcesRepository sourcesRepository;
 
-        [ActivatorUtilitiesConstructor]
-        public PricesController(AssetPricesContext context)
+        public PricesController(IPricesRepository pricesRepository, IAssetRepository assetRepository, ISourcesRepository sourcesRepository)
         {
-            _context = context;
-            _pricesRepository = new PricesRepository(context);
-        }
-
-        public PricesController(IPricesRepository pricesRepository)
-        {
-            _pricesRepository = pricesRepository;
+            this.pricesRepository = pricesRepository;
+            this.assetRepository = assetRepository;
+            this.sourcesRepository = sourcesRepository;
         }
 
         // GET: api/Prices
@@ -35,7 +31,7 @@ namespace AssetPricesAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetPrices()
         {
-            return Ok(await _pricesRepository.GetPricesAsync());
+            return Ok(await pricesRepository.GetPricesAsync());
         }
 
         // GET: api/Prices/5
@@ -43,7 +39,7 @@ namespace AssetPricesAPI.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetPrice(int id)
         {
-            var price = await _pricesRepository.GetPriceAsync(id);
+            var price = await pricesRepository.GetPriceAsync(id);
 
             if (price == null)
             {
@@ -58,11 +54,11 @@ namespace AssetPricesAPI.Controllers
         [HttpGet("date")]
         public async Task<IActionResult> GetPriceByDate(DateTime date, [FromQuery]string[]? assetISINs = null, string sourceName = null)
         {
-            Source source = await _pricesRepository.GetSourceAsync(sourceName);
+            Source source = await pricesRepository.GetSourceAsync(sourceName);
 
-            List<Asset> assets = await _pricesRepository.GetAssetsAsync(assetISINs);
+            List<Asset> assets = await pricesRepository.GetAssetsAsync(assetISINs);
 
-            return Ok(await _pricesRepository.GetPricesAsync(date, assets, source));
+            return Ok(await pricesRepository.GetPricesAsync(date, assets, source));
         }
 
 
@@ -78,7 +74,7 @@ namespace AssetPricesAPI.Controllers
             }
 
             // Retrieve the current price for comparison
-            var currentPrice = await _pricesRepository.GetPriceAsync(price);
+            var currentPrice = await pricesRepository.GetPriceAsync(price);
 
             // Handle scenarios for existing and duplicate prices
             if (currentPrice == null)
@@ -97,7 +93,7 @@ namespace AssetPricesAPI.Controllers
             try
             {
                 // Update the price in the repository
-                await _pricesRepository.EditPriceAsync(id, price);
+                await pricesRepository.EditPriceAsync(id, price);
             }
             catch (Exception ex)
             {
@@ -116,7 +112,7 @@ namespace AssetPricesAPI.Controllers
             price.LastUpdated = DateTime.Now;
 
             // Check for existing price with the same asset and source
-            var existingPrice = await _pricesRepository.GetPriceAsync(price);
+            var existingPrice = await pricesRepository.GetPriceAsync(price);
 
             if (existingPrice != null)
             {
@@ -128,14 +124,14 @@ namespace AssetPricesAPI.Controllers
                 price.Asset = existingPrice.Asset;
                 price.Source = existingPrice.Source;
 
-                await _pricesRepository.EditPriceAsync(price.Id, existingPrice);
+                await pricesRepository.EditPriceAsync(price.Id, existingPrice);
             }
             else
             {
                 // Add a new price if no existing price is found
-                price = await _pricesRepository.AddPriceAsync(price);
-                price.Asset = await _context.Assets.FindAsync(price.AssetId);
-                price.Source = await _context.Sources.FindAsync(price.SourceId);
+                price = await pricesRepository.AddPriceAsync(price);
+                price.Asset = await assetRepository.GetAssetAsync(price.AssetId);
+                price.Source = await sourcesRepository.GetSourceAsync(price.SourceId);
             }
 
             return Ok(CreatedAtAction("GetPrice", new { id = price.Id }, price));
@@ -147,7 +143,7 @@ namespace AssetPricesAPI.Controllers
         public async Task<IActionResult> DeletePrice(int id)
         {
             // Retrieve the price for deletion
-            var price = await _pricesRepository.GetPriceAsync(id);
+            var price = await pricesRepository.GetPriceAsync(id);
 
             if (price == null)
             {
@@ -156,7 +152,7 @@ namespace AssetPricesAPI.Controllers
             }
 
             // Delete the price from the repository
-            await _pricesRepository.DeletePriceAsync(price);
+            await pricesRepository.DeletePriceAsync(price);
 
             return Ok();
         }

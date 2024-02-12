@@ -36,7 +36,7 @@ namespace AssetPricesAPI.Repositories
         {
             return await _context.Prices
                                         .Where(p => (p.Date > date && p.Date < date.AddDays(1))
-                                                && (assets.Count() == 0 || assets.Contains(p.Asset))
+                                                && (!assets.Any() || assets.Contains(p.Asset))
                                                 && (source == null || p.Source.Equals(source)))
                                         .Include(p => p.Source)
                                         .Include(p => p.Asset)
